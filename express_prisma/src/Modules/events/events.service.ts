@@ -85,7 +85,44 @@ export class EventsService {
      */
 
   async getEventsWithWorkshops() {
-    throw new Error('TODO task 1');
+    const data = await this.app.getDataSource().event.findMany({
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    const ids = data.map(val => {return val.id})
+
+    const workshops = await this.app.getDataSource().workshop.findMany({
+      select: {
+        id: true,
+        start: true,
+        end: true,
+        eventId: true,
+        name: true,
+        createdAt: true,
+      },
+      where: {
+        eventId: { in: ids }
+      }
+    });
+
+    let map: any = {};
+    for (const item of workshops) {
+      if(!map[item.id]) {
+        map[item.id] = [item]
+      } else {
+        map[item.id].push(item)
+      }
+    }
+
+    let result: any = [];
+    for (const item of data) {
+      result.push({ ...item, workshops: map[item.id] })
+    }
+    return result;
   }
 
   /* TODO: complete getFutureEventWithWorkshops so that it returns events with workshops, that have not yet started
@@ -155,6 +192,46 @@ export class EventsService {
     ```
      */
   async getFutureEventWithWorkshops() {
-    throw new Error('TODO task 2');
+    const data = await this.app.getDataSource().event.findMany({
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    const ids = data.map(val => {return val.id})
+
+    const workshops = await this.app.getDataSource().workshop.findMany({
+      select: {
+        id: true,
+        start: true,
+        end: true,
+        eventId: true,
+        name: true,
+        createdAt: true,
+      },
+      where: {
+        eventId: { in: ids },
+        start: {
+          gte: new Date()
+        }
+      }
+    });
+
+    let map: any = {};
+    for (const item of workshops) {
+      if(!map[item.id]) {
+        map[item.id] = [item]
+      } else {
+        map[item.id].push(item)
+      }
+    }
+
+    let result: any = [];
+    for (const item of data) {
+      result.push({ ...item, workshops: map[item.id] })
+    }
+    return result;
   }
 }

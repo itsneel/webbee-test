@@ -1,4 +1,9 @@
+import { MenuItem } from "@prisma/client";
 import App from "../../app";
+
+interface MenuItemResponse extends MenuItem {
+  children: MenuItemResponse[]
+}
 
 export class MenuItemsService {
   constructor(protected app: App) {}
@@ -78,7 +83,25 @@ export class MenuItemsService {
     ]
   */
 
+  private _constructNestedStructure(data: MenuItem[]): MenuItemResponse[] {
+    let map: { [key: number]: any } = {};
+    for (const item of data) {
+      let obj = { ...item, children: []};
+      map[obj.id] = obj;
+      const parent = obj.parentId || -1;
+      if (!map[parent]) {
+        map[parent] = { children: [] };
+      }
+      map[parent].children.push(obj);
+    }
+    return map[-1].children;
+  }
+
+
   async getMenuItems() {
-    throw new Error('TODO in task 3');
+    const dataSource = this.app.getDataSource();
+    const data: MenuItem[] = await dataSource.menuItem.findMany();
+    const structuredData: MenuItemResponse[] =  this._constructNestedStructure(data);
+    return structuredData
   }
 }
